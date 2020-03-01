@@ -16,4 +16,4 @@ App for you to connect to IRC World!
 * [KivyMD](https://gitlab.com/kivymd/KivyMD)
 
 ## Licence
-The MIT License (MIT)
+- See license.txt
