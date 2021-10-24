@@ -1,9 +1,20 @@
 #: import sm kivy.uix.screenmanager
-#: import MDTextField kivymd.textfields.MDTextField
-#: import TwoLineListItem kivymd.list.TwoLineListItem
-#: import SettingScreen app.component.setting_screen
-#: import ChatScreen app.component.chat_screen
-#: import StatusTab app.component.status_tab
+#: import MDTextField kivymd.uix.textfield.MDTextField
+#: import TwoLineListItem kivymd.uix.list.TwoLineListItem
+#: import SettingScreen app.component.setting_screen.SettingScreen
+#: import MDToolbar kivymd.uix.toolbar.MDToolbar
+#: import ChatScreen app.component.chat_screen.ChatScreen
+#: import StatusTab app.component.status_tab.StatusTab
+
+##:import MDTabsBase kivymd.tabs.MDTabsBase
+##:import MDTab kivymd.tabs.MDTabs
+<Tab@BoxLayout+MDTabsBase>
+# ^ See "load_string" in
+# ~/venv/kivy/lib/python3.9/site-packages/kivymd/uix/picker.py
+# for an example (Changed in
+# <https://github.com/kivymd/KivyMD/commit/610d5fe8cebe3e5df316e89d0f4b9ea6c0602bc3>)
+
+#: import MDApp kivymd.app
 
 <ChannelChatTab>:
     msg_list:msg_list
@@ -122,7 +133,7 @@
     name: 'irc_chat'
     tab_panel: tab_panel
 
-    MDTabbedPanel:
+    MDTabs:
         id: tab_panel
         tab_display_mode:'text'
         StatusTab:
@@ -146,9 +157,9 @@
         pos_hint: {'center_x': 0.5, 'center_y': 0.3}
         on_release: app.show_example_grid_bottom_sheet()
 
-BoxLayout:
+Screen:
     orientation: 'vertical'
-    Toolbar:
+    MDToolbar:
         id: toolbar
         title: "Kivy IRC"
         md_bg_color: app.theme_cls.primary_color
@@ -161,7 +172,7 @@ BoxLayout:
         ChatScreen
         SettingScreen
 
-<NavDrawer>
+<NavDrawer>:
     title: "Kivy IRC"
     NavigationDrawerIconButton:
         icon: 'qqchat'

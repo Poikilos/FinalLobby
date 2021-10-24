@@ -1,14 +1,18 @@
 from math import ceil
 
-from kivy.app import App
+# from kivy.app import App
+from kivymd.app import MDApp
+# ^ <https://github.com/HeaTTheatR/KivyMD/blob/master/README.md#api-
+#   breaking-changes>
+
 from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.properties import ObjectProperty, Logger, NumericProperty
-from kivymd.bottomsheet import MDListBottomSheet
-from kivymd.dialog import MDDialog
-from kivymd.label import MDLabel
-from kivymd.list import BaseListItem
-from kivymd.tabs import MDTab
+from kivymd.uix.bottomsheet import MDListBottomSheet
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.label import MDLabel
+from kivymd.uix.list import BaseListItem
+from kivymd.uix.tab import MDTabsBase
 
 
 class MultiLineListItem(BaseListItem):
@@ -27,14 +31,14 @@ class MultiLineListItem(BaseListItem):
         self.ids._lbl_primary.markup = True
 
 
-class StatusTab(MDTab):
+class StatusTab(MDTabsBase):
     app = ObjectProperty(None)
     irc_action = ObjectProperty(None)
     irc_action_send_btn = ObjectProperty(None)
 
     def __init__(self, **kw):
         super(StatusTab, self).__init__(**kw)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
         Clock.schedule_once(self.__post_init__)
 
     def __post_init__(self, args):

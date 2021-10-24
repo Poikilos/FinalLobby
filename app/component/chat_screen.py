@@ -1,11 +1,15 @@
 from math import ceil
 
-from kivy.app import App
+# from kivy.app import App
+from kivymd.app import MDApp
+# ^ <https://github.com/HeaTTheatR/KivyMD/blob/master/README.md#api-
+#   breaking-changes>
+
 from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.properties import ObjectProperty, NumericProperty, DictProperty
 from kivy.uix.screenmanager import Screen
-from kivymd.list import BaseListItem
+from kivymd.uix.list import BaseListItem
 
 from app.component.channel_chat_tab import ChannelChatTab
 from app.component.private_chat_tab import PrivateChatTab
@@ -34,7 +38,7 @@ class ChatScreen(Screen):
 
     def __init__(self, **kw):
         super(ChatScreen, self).__init__(**kw)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
         Clock.schedule_once(self.__post_init__)
 
     def __post_init__(self, *args):

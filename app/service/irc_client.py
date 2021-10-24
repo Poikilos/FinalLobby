@@ -57,7 +57,7 @@ class IRCClient(irc.IRCClient):
         self.password = password
 
     def connectionMade(self):
-        self.channels = self.factory.app.channel
+        self.channels = self.factory.app.channels
 
         irc.IRCClient.connectionMade(self)
         Logger.info("IRC: connected at %s" %
@@ -70,12 +70,16 @@ class IRCClient(irc.IRCClient):
                     time.asctime(time.localtime(time.time())))
 
     def signedOn(self):
-        """Called when bot has successfully signed on to server."""
+        """
+        The user has successfully signed on to server.
+        """
         for channel in self.channels:
             self.join(channel)
 
     def joined(self, channel):
-        """This will get called when the bot joins the channel."""
+        """
+        The user joined a channel.
+        """
         Logger.info("IRC: I have joined %s" % channel)
         channel = channel.strip('#')
         self.factory.app.scr_mngr.get_screen('irc_chat').add_channel_tab(channel)
@@ -115,7 +119,9 @@ class IRCClient(irc.IRCClient):
                 cb(user, channel, msg)
         else:
             if channel == self.nickname:
-                self.factory.app.scr_mngr.get_screen('irc_chat').add_private_tab(user.split('!')[0], msg)
+                self.factory.app.scr_mngr.get_screen(
+                    'irc_chat'
+                ).add_private_tab(user.split('!')[0], msg)
                 return
 
                 # Check to see if they're sending me a private message
@@ -127,7 +133,9 @@ class IRCClient(irc.IRCClient):
                 #     Logger.info("IRC: <%s> %s" % (self.nickname, msg))
 
     def userJoined(self, user, channel):
-        """Called when I see another user joining a channel."""
+        """
+        A user joined a channel.
+        """
         channel = channel.strip('#')
         if channel not in self._user_action_callback:
             return
@@ -138,7 +146,9 @@ class IRCClient(irc.IRCClient):
             cb(user, channel, None, 0)
 
     def userLeft(self, user, channel):
-        """Called when I see another user leaving a channel."""
+        """
+        A user left a channel.
+        """
         channel = channel.strip('#')
         if channel not in self._user_action_callback:
             return
@@ -149,7 +159,9 @@ class IRCClient(irc.IRCClient):
             cb(user, channel, None, 1)
 
     def userQuit(self, user, quit_message):
-        """Called when I see another user disconnect from the network."""
+        """
+        Another user disconnected from the network.
+        """
         if not self._user_action_callback:
             return
 
@@ -159,18 +171,24 @@ class IRCClient(irc.IRCClient):
                 cb(user, None, quit_message, 2)
 
     def action(self, user, channel, msg):
-        """This will get called when the bot sees someone do an action."""
+        """
+        Someone did an action.
+        """
         user = user.split('!', 1)[0]
         Logger.info("IRC: * %s %s" % (user, msg))
 
     def irc_NICK(self, prefix, params):
-        """Called when an IRC user changes their nickname."""
+        """
+        An IRC user set a nickname.
+        """
         old_nick = prefix.split('!')[0]
         new_nick = params[0]
         Logger.info("IRC: %s is now known as %s" % (old_nick, new_nick))
 
     def who(self, channel):
-        """Called to send WHO command for a channel."""
+        """
+        Send WHO command for a channel.
+        """
         channel = channel.lower()
         d = defer.Deferred()
         if channel not in self._who_callback:
@@ -181,7 +199,10 @@ class IRCClient(irc.IRCClient):
         return d
 
     def irc_RPL_WHOREPLY(self, prefix, params):
-        """This will get called when the bot sees someone do an action."""
+        """
+        Someone did an action.
+        """
+        ## TODO: fix docstring (dup of action)
         channel = params[1].lower().strip('#')
         if channel not in self._who_callback:
             return
@@ -190,7 +211,9 @@ class IRCClient(irc.IRCClient):
         n.append(params)
 
     def irc_RPL_ENDOFWHO(self, prefix, params):
-        """Print all unhandled replies, for debugging."""
+        """
+        Print all unhandled replies (for debugging).
+        """
         channel = params[1].lower().strip('#')
         if channel not in self._who_callback:
             return
@@ -204,14 +227,18 @@ class IRCClient(irc.IRCClient):
         del self._who_callback[channel]
 
     def noticed(self, user, channel, message):
-        """Called when I have a notice from a user to me or a channel."""
+        """
+        Someone sent a notice to the current user or a channel.
+        """
         callbacks = self._noticed_callback
 
         for cb in callbacks:
             cb(user, channel, message)
 
     def irc_unknown(self, prefix, command, params):
-        """Print all unhandled replies, for debugging."""
+        """
+        Print all unhandled replies (for debugging).
+        """
         callbacks = self._irc_unknown_callback
 
         for cb in callbacks:

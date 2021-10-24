@@ -1,12 +1,16 @@
 from math import ceil
 
-from kivy.app import App
+# from kivy.app import App
+from kivymd.app import MDApp
+# ^ <https://github.com/HeaTTheatR/KivyMD/blob/master/README.md#api-
+#   breaking-changes>
+
 from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.properties import ObjectProperty, Logger, NumericProperty
-from kivymd.bottomsheet import MDListBottomSheet
-from kivymd.list import BaseListItem
-from kivymd.tabs import MDTab
+from kivymd.uix.bottomsheet import MDListBottomSheet
+from kivymd.uix.list import BaseListItem
+from kivymd.uix.tab import MDTabsBase
 
 
 class MultiLineListItem(BaseListItem):
@@ -25,14 +29,14 @@ class MultiLineListItem(BaseListItem):
         self.ids._lbl_primary.markup = True
 
 
-class PrivateChatTab(MDTab):
+class PrivateChatTab(MDTabsBase):
     app = ObjectProperty(None)
     irc_message = ObjectProperty(None)
     irc_message_send_btn = ObjectProperty(None)
 
     def __init__(self, **kw):
         super(PrivateChatTab, self).__init__(**kw)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
         Clock.schedule_once(self.__post_init__)
         self.on_privmsg(self.text, 'private', kw['msg'])
 

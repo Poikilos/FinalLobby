@@ -1,12 +1,16 @@
 from math import ceil
 
-from kivy.app import App
+# from kivy.app import App
+from kivymd.app import MDApp
+# ^ <https://github.com/HeaTTheatR/KivyMD/blob/master/README.md#api-
+#   breaking-changes>
+
 from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.properties import ObjectProperty, Logger, NumericProperty, DictProperty
-from kivymd.bottomsheet import MDListBottomSheet
-from kivymd.list import BaseListItem
-from kivymd.tabs import MDTab
+from kivymd.uix.bottomsheet import MDListBottomSheet
+from kivymd.uix.list import BaseListItem
+from kivymd.uix.tab import MDTabsBase
 
 
 class MultiLineListItem(BaseListItem):
@@ -25,7 +29,7 @@ class MultiLineListItem(BaseListItem):
         self.ids._lbl_primary.markup = True
 
 
-class ChannelChatTab(MDTab):
+class ChannelChatTab(MDTabsBase):
     app = ObjectProperty(None)
     irc_message = ObjectProperty(None)
     irc_message_send_btn = ObjectProperty(None)
@@ -33,11 +37,13 @@ class ChannelChatTab(MDTab):
 
     def __init__(self, **kw):
         super(ChannelChatTab, self).__init__(**kw)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
         Clock.schedule_once(self.__post_init__)
 
     def __post_init__(self, *args):
-        self.irc_message._hint_lbl.text = '@' + self.app.config.get('irc', 'nickname')
+        self.irc_message._hint_lbl.text = (
+            '@' + self.app.config.get('irc', 'nickname')
+        )
         self.app.connection.on_privmsg(self.text, self.on_privmsg)
         self.app.connection.on_usr_action(self.text, self.on_usr_action)
 
@@ -50,18 +56,22 @@ class ChannelChatTab(MDTab):
         self.app.connection.msg("#" + self.text, self.irc_message.text)
         self.msg_list.add_widget(
             MultiLineListItem(
-                text="[b][color=1A237E]@" + self.app.config.get('irc', 'nickname') + "[/color][/b] "
-                     + self.irc_message.text,
+                text = ("[b][color=1A237E]@"
+                        + self.app.config.get('irc', 'nickname')
+                        + "[/color][/b] "
+                        + self.irc_message.text),
                 font_style='Subhead',
             )
         )
-        Logger.info("IRC: <%s> %s" % (self.app.config.get('irc', 'nickname'), self.irc_message.text))
+        nick = self.app.config.get('irc', 'nickname')
+        Logger.info("IRC: <%s> %s" % (nick, self.irc_message.text))
 
     def on_privmsg(self, user, channel, msg):
         user = user.split('!', 1)[0]
         self.msg_list.add_widget(
             MultiLineListItem(
-                text="[b][color=F44336]@" + user + "[/color][/b] " + msg,
+                text=("[b][color=F44336]@" + user + "[/color][/b] "
+                        + msg),
                 font_style='Subhead',
             )
         )
@@ -71,7 +81,8 @@ class ChannelChatTab(MDTab):
         if action == 0:
             self.msg_list.add_widget(
                 MultiLineListItem(
-                    text="[color=9C27B0]" + user + "[/color] has joined #" + self.text,
+                    text=("[color=9C27B0]" + user
+                          + "[/color] has joined #" + self.text),
                     font_style='Subhead',
                 )
             )
@@ -79,7 +90,8 @@ class ChannelChatTab(MDTab):
         elif action == 1:
             self.msg_list.add_widget(
                 MultiLineListItem(
-                    text="[color=9C27B0]" + user + "[/color] has left #" + self.text,
+                    text=("[color=9C27B0]" + user
+                          + "[/color] has left #" + self.text),
                     font_style='Subhead',
                 )
             )
@@ -87,12 +99,16 @@ class ChannelChatTab(MDTab):
         elif action == 2:
             self.msg_list.add_widget(
                 MultiLineListItem(
-                    text="[color=9A2FB0]" + user + "[/color] has quit &bl;" + quit_message + "&bt;",
+                    text=("[color=9A2FB0]" + user
+                          + "[/color] has quit &bl;" + quit_message
+                          + "&bt;"),
                     font_style='Subhead',
                 )
             )
             Logger.info("IRC: %s <- %s" % (user, 'quit'))
-        self.app.connection.who(self.text).addCallback(self.who_callback)
+        self.app.connection.who(self.text).addCallback(
+            self.who_callback
+        )
 
     def nick_details(self, nick_list_item):
         self.app.connection.signedOn()
