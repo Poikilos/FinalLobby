@@ -74,3 +74,17 @@ pip_or_end kivymd
 # -<https://note.nkmk.me/en/python-pip-install-requirements/>
 which python
 deactivate
+INSTALL_CB=false
+echo
+if [ ! -f "`command -v xsel`" ]; then
+    echo "WARNING: You must now manually install the \"xsel\" package."
+    INSTALL_CB=true
+fi
+if [ ! -f "`command -v xclip`" ]; then
+    echo "WARNING: You must now manually install the \"xclip\" package."
+    INSTALL_CB=true
+fi
+if [ "@$INSTALL_CB" = "@true" ]; then
+    echo "Kivy uses xsel and xclip for clipboard features while an app is running on a Linux desktop."
+fi
+echo
