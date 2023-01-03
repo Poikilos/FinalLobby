@@ -1,26 +1,37 @@
-#: import sm kivy.uix.screenmanager
-#: import MDTextField kivymd.uix.textfield.MDTextField
-#: import TwoLineListItem kivymd.uix.list.TwoLineListItem
-#: import SettingScreen app.component.setting_screen.SettingScreen
-#: import MDToolbar kivymd.uix.toolbar.MDToolbar
-#: import ChatScreen app.component.chat_screen.ChatScreen
-#: import StatusTab app.component.status_tab.StatusTab
+#:import sm kivy.uix.screenmanager
+#:import MDTextField kivymd.uix.textfield.MDTextField
+#:import TwoLineListItem kivymd.uix.list.TwoLineListItem
+#:import MDTopAppBar kivymd.uix.toolbar.MDTopAppBar
 
-##:import MDTabsBase kivymd.tabs.MDTabsBase
-##:import MDTab kivymd.tabs.MDTabs
-<Tab@BoxLayout+MDTabsBase>
-# ^ See "load_string" in
-# ~/venv/kivy/lib/python3.9/site-packages/kivymd/uix/picker.py
+#:import SettingScreen app.component.setting_screen.SettingScreen
+#:import ChatScreen app.component.chat_screen.ChatScreen
+#:import StatusTab app.component.status_tab.StatusTab
+# #:import MDTabsBase kivymd.uix.tab.MDTabsBase
+
+## <Tab@BoxLayout+MDTabsBase>
+# ^ See "load_string" such as in
+# ~/.virtualenv/kivy/lib/python3.10/site-packages/kivymd/uix/picker.py
 # for an example (Changed in
 # <https://github.com/kivymd/KivyMD/commit/610d5fe8cebe3e5df316e89d0f4b9ea6c0602bc3>)
+# but see the latest refactoring at
+# <https://kivymd.readthedocs.io/en/latest/components/tabs/index.html
 
-#: import MDApp kivymd.app
+#:import MDApp kivymd.app
+
+# This was modernized for late 2022 KivyMD using
+#   ~/metaprojects/examples/kivymd/kivymd-navigationdrawer-switching-kv.py
+#   which is a "Switching Screens" example from
+#   <https://kivymd.readthedocs.io/en/0.104.0/components/navigation-drawer/index.html
+#   #switching-screens-in-the-screenmanager-and-using-the-common-mdtoolbar>
+#   and https://github.com/kivymd/KivyMD/issues/318
+
 
 <ChannelChatTab>:
     msg_list:msg_list
     nick_list:nick_list
     irc_message:irc_message
     irc_message_send_btn:irc_message_send_btn
+    title: 'CHAT'
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
@@ -63,7 +74,10 @@
             bar_width: dp(4)
             MDList:
                 id: nick_list
+
+
 <PrivateChatTab>:
+    title: 'PM'
     msg_list:msg_list
     irc_message:irc_message
     irc_message_send_btn:irc_message_send_btn
@@ -96,10 +110,15 @@
                 pos_hint: {'center_x': 0.5, 'center_y': 0.6}
                 on_release: root.send_message()
 
+
 <StatusTab>:
-    msg_list:msg_list
-    irc_action:irc_action
-    irc_action_send_btn:irc_action_send_btn
+    msg_list: msg_list
+    irc_action: irc_action
+    irc_action_send_btn: irc_action_send_btn
+    # title: 'STATUS'  # Set during instantiation
+    # MDLabel:
+    #     text: 'STATUS'
+
     BoxLayout:
         orientation: 'vertical'
         padding: 10
@@ -129,16 +148,18 @@
                 pos_hint: {'center_x': 0.5, 'center_y': 0.6}
                 on_release: root.send_action()
 
+
 <ChatScreen>:
     name: 'irc_chat'
     tab_panel: tab_panel
-
     MDTabs:
         id: tab_panel
         tab_display_mode:'text'
         StatusTab:
             name: 'status'
-            text: 'Status'
+            title: 'Status'
+            # icon: ''
+
 
 <SettingScreen>:
     name: 'settings'
@@ -157,30 +178,43 @@
         pos_hint: {'center_x': 0.5, 'center_y': 0.3}
         on_release: app.show_example_grid_bottom_sheet()
 
-Screen:
-    orientation: 'vertical'
-    MDToolbar:
-        id: toolbar
+
+MDBoxLayout:
+    orientation: "vertical"
+    MDTopAppBar:
         title: "Kivy IRC"
+        id: toolbar
+        # id: top_app_bar  # nav_drawer
+        # top_app_bar would only be able to use:
+        left_action_items: [['menu', lambda x: app.set_custom_nav_state("toggle")]]
+        # left_action_items: [["menu", lambda x: nav_drawer.set_state("open")]]
+
         md_bg_color: app.theme_cls.primary_color
         background_palette: 'Primary'
         background_hue: '500'
-        left_action_items: [['menu', lambda x: app.nav_drawer.toggle()]]
-    ScreenManager:
-        id: scr_mngr
-        transition: sm.SlideTransition()
-        ChatScreen
-        SettingScreen
 
-<NavDrawer>:
-    title: "Kivy IRC"
-    NavigationDrawerIconButton:
-        icon: 'qqchat'
-        text: "IRC Chat"
-        on_release: app.root.ids.scr_mngr.current = 'irc_chat'
-    NavigationDrawerIconButton:
-        icon: 'settings'
-        text: "Settings"
-        on_release: app.root.ids.scr_mngr.current = 'settings'
+    MDNavigationLayout:
+        id: navlayout
+        MDScreenManager:
+            id: scr_mngr
+            transition: sm.SlideTransition()
+            ChatScreen
+            SettingScreen
 
+        MDNavigationDrawer:
+            id: nav_drawer
+            radius: (0, 16, 16, 0)
 
+            # ContentNavigationDrawer:
+            #     screen_manager: screen_manager
+            #     nav_drawer: nav_drawer
+
+            MDNavigationDrawerMenu:
+                MDNavigationDrawerItem:
+                    icon: 'chat-outline'
+                    text: "IRC Chat"
+                    on_release: app.root.ids.scr_mngr.current = 'irc_chat'
+                MDNavigationDrawerItem:
+                    icon: 'cog-outline'
+                    text: "Settings"
+                    on_release: app.root.ids.scr_mngr.current = 'settings'

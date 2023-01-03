@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Check for an installed module: hasmodule.py <module_name>
 The result is 0 if the module is installed, and non-zero if not (or if

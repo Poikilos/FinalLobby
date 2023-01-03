@@ -1,8 +1,8 @@
+# -*- coding: utf-8 -*-
 from kivy.clock import Clock
-from kivy.uix.screenmanager import Screen
+from kivymd.uix.screen import MDScreen
 
-
-class SettingScreen(Screen):
+class SettingScreen(MDScreen):
     def __init__(self, **kw):
         super(SettingScreen, self).__init__(**kw)
         Clock.schedule_once(self.__post_init__)

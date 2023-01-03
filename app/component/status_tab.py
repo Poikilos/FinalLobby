@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import sys
 from math import ceil
 
 # from kivy.app import App
@@ -13,7 +15,8 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.list import BaseListItem
 from kivymd.uix.tab import MDTabsBase
-
+from kivymd.uix.boxlayout import MDBoxLayout
+import app.constants as constants
 
 class MultiLineListItem(BaseListItem):
     _txt_top_pad = NumericProperty(dp(10))
@@ -31,7 +34,7 @@ class MultiLineListItem(BaseListItem):
         self.ids._lbl_primary.markup = True
 
 
-class StatusTab(MDTabsBase):
+class StatusTab(MDBoxLayout, MDTabsBase):
     app = ObjectProperty(None)
     irc_action = ObjectProperty(None)
     irc_action_send_btn = ObjectProperty(None)
@@ -46,20 +49,24 @@ class StatusTab(MDTabsBase):
 
     def update_irc_action_text(self, dt):
         self.irc_action.text = ''
-        self.irc_action.on_focus()
+        # self.irc_action.on_focus()  # See see doc/development/irc_message.md
+        self.irc_action.focus = True
 
     def send_action(self):
         Clock.schedule_once(self.update_irc_action_text)
         self.app.connection.sendLine(self.irc_action.text.strip('/'))
+        network = self.app.get_config_non_blank('irc', 'network')
+        if network is None:
+            raise RuntimeError("irc network should be set before send_action.")
         self.msg_list.add_widget(
             MultiLineListItem(
-                text="[b][color=1A237E]" + self.app.config.get('irc', 'nickname') + "[/color][/b] "
+                text="[b][color=1A237E]" + self.app.config.get(network, 'nickname') + "[/color][/b] "
                      + self.irc_action.text,
-                font_style='Subhead',
+                font_style=constants.FONT_STYLE_SUBHEADING,
             )
         )
         self.msg_list.parent.scroll_to(self.msg_list.children[0])
-        Logger.info("IRC: <%s> %s" % (self.app.config.get('irc', 'nickname'), self.irc_action.text))
+        Logger.info("IRC: <%s> %s" % (self.app.get_scoped('nickname'), self.irc_action.text))
 
     def on_irc_unknown(self, prefix, command, params):
         Logger.info("IRC UNKNOWN: <%s> %s %s" % (prefix, command, params))
@@ -86,7 +93,7 @@ class StatusTab(MDTabsBase):
             self.msg_list.add_widget(
                 MultiLineListItem(
                     text="[b][color=F44336]" + user + "[/color][/b] " + action,
-                    font_style='Subhead',
+                    font_style=constants.FONT_STYLE_SUBHEADING,
                 )
             )
             self.msg_list.parent.scroll_to(self.msg_list.children[0])
@@ -109,3 +116,49 @@ class StatusTab(MDTabsBase):
 
     def __post_joined__(self, connection):
         pass
+
+
+TEST_KV = '''
+##:import StatusTab app.component.status_tab.StatusTab
+#:import StatusTab status_tab.StatusTab
+
+<StatusTab>:
+    # msg_list:msg_list
+    # irc_action:irc_action
+    # irc_action_send_btn:irc_action_send_btn
+    title: "Status"
+    MDBoxLayout:
+        orientation: "vertical"
+        height: label1.height + label2.height
+        MDLabel:
+            id: label1
+            text: "This is a demo of the module. Import in KV as follows:"
+            size: self.texture_size
+            size_hint_y: .1
+        MDLabel:
+            id: label2
+            text: "#:import StatusTab app.component.status_tab.StatusTab"
+            size: self.texture_size
+            size_hint_y: .1
+        Widget:
+            size_hint: None, .8
+
+MDTabs:
+    id: tab_panel
+    tab_display_mode:'text'
+    StatusTab
+'''
+
+
+if __name__ == "__main__":
+    print("Tests don't work from here since StatusTab isn't defined yet"
+          " for some reason. Load this as a module in KV instead.",
+          file=sys.stderr)
+    # sys.exit(1)
+    from kivymd.app import MDApp
+    from kivy.lang import Builder
+
+    class StatusTabTestApp(MDApp):
+        def build(self):
+            return Builder.load_string(TEST_KV)
+    StatusTabTestApp().run()

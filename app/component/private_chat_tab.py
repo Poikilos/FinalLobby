@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from math import ceil
 
 # from kivy.app import App
@@ -11,7 +12,12 @@ from kivy.properties import ObjectProperty, Logger, NumericProperty
 from kivymd.uix.bottomsheet import MDListBottomSheet
 from kivymd.uix.list import BaseListItem
 from kivymd.uix.tab import MDTabsBase
-
+from kivymd.uix.floatlayout import MDFloatLayout
+# from kivymd.uix.boxlayout import MDBoxLayout
+# ^ In kivy-irc, MDTab (deprecated) was used, but now if you don't
+#   inherit a layout, you get
+#   expected EventDispatcher got PrivateChatTab in tab.py (in KivyMD)
+import app.constants as constants
 
 class MultiLineListItem(BaseListItem):
     _txt_top_pad = NumericProperty(dp(10))
@@ -29,7 +35,7 @@ class MultiLineListItem(BaseListItem):
         self.ids._lbl_primary.markup = True
 
 
-class PrivateChatTab(MDTabsBase):
+class PrivateChatTab(MDFloatLayout, MDTabsBase):
     app = ObjectProperty(None)
     irc_message = ObjectProperty(None)
     irc_message_send_btn = ObjectProperty(None)
@@ -37,35 +43,39 @@ class PrivateChatTab(MDTabsBase):
     def __init__(self, **kw):
         super(PrivateChatTab, self).__init__(**kw)
         self.app = MDApp.get_running_app()
+        # self.title must be set to channel, since it is used in various
+        #   methods. The same goes for ChannelChatTab.
         Clock.schedule_once(self.__post_init__)
-        self.on_privmsg(self.text, 'private', kw['msg'])
+        self.on_privmsg(self.title, 'private', kw['msg'])
 
     def __post_init__(self, args):
-        self.irc_message._hint_lbl.text = '@' + self.app.config.get('irc', 'nickname')
-        self.app.connection.on_privmsg(self.text, self.on_privmsg)
+        self.irc_message.hint_text = '@' + self.app.get_scoped('nickname')
+        # ^ _hint_lbl is deprecated. See doc/irc_message.md field list.
+        self.app.connection.on_privmsg(self.title, self.on_privmsg)
 
     def update_irc_message_text(self, dt):
         self.irc_message.text = ''
-        self.irc_message.on_focus()
+        # self.irc_message.on_focus()  # See see doc/development/irc_message.md
+        self.irc_message.focus = True
 
     def send_message(self):
         Clock.schedule_once(self.update_irc_message_text)
-        self.app.connection.msg(self.text, self.irc_message.text)
+        self.app.connection.msg(self.title, self.irc_message.text)
         self.msg_list.add_widget(
             MultiLineListItem(
-                text="[b][color=1A237E]@" + self.app.config.get('irc', 'nickname') + "[/color][/b] "
+                text="[b][color=1A237E]@" + self.app.get_scoped('nickname') + "[/color][/b] "
                      + self.irc_message.text,
-                font_style='Subhead',
+                font_style=constants.FONT_STYLE_SUBHEADING,
             )
         )
-        Logger.info("IRC: <%s> %s" % (self.app.config.get('irc', 'nickname'), self.irc_message.text))
+        Logger.info("IRC: <%s> %s" % (self.app.get_scoped('nickname'), self.irc_message.text))
 
     def on_privmsg(self, user, channel, msg):
         user = user.split('!', 1)[0]
         self.msg_list.add_widget(
             MultiLineListItem(
                 text="[b][color=F44336]@" + user + "[/color][/b] " + msg,
-                font_style='Subhead',
+                font_style=constants.FONT_STYLE_SUBHEADING,
             )
         )
         Logger.info("IRC: <%s> %s" % (user, msg))

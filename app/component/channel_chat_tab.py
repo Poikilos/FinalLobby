@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import sys
 from math import ceil
 
 # from kivy.app import App
@@ -11,7 +13,12 @@ from kivy.properties import ObjectProperty, Logger, NumericProperty, DictPropert
 from kivymd.uix.bottomsheet import MDListBottomSheet
 from kivymd.uix.list import BaseListItem
 from kivymd.uix.tab import MDTabsBase
-
+from kivymd.uix.floatlayout import MDFloatLayout
+# from kivymd.uix.boxlayout import MDBoxLayout
+# ^ In kivy-irc, MDTab (deprecated) was used, but now if you don't
+#   inherit a layout, you get
+#   expected EventDispatcher got ChannelChatTab in tab.py (in KivyMD)
+import app.constants as constants
 
 class MultiLineListItem(BaseListItem):
     _txt_top_pad = NumericProperty(dp(10))
@@ -29,7 +36,7 @@ class MultiLineListItem(BaseListItem):
         self.ids._lbl_primary.markup = True
 
 
-class ChannelChatTab(MDTabsBase):
+class ChannelChatTab(MDFloatLayout, MDTabsBase):
     app = ObjectProperty(None)
     irc_message = ObjectProperty(None)
     irc_message_send_btn = ObjectProperty(None)
@@ -38,32 +45,40 @@ class ChannelChatTab(MDTabsBase):
     def __init__(self, **kw):
         super(ChannelChatTab, self).__init__(**kw)
         self.app = MDApp.get_running_app()
+        # self.title must be set to channel, since it is used in various
+        #   methods. The same goes for PrivateChatTab.
         Clock.schedule_once(self.__post_init__)
 
     def __post_init__(self, *args):
-        self.irc_message._hint_lbl.text = (
-            '@' + self.app.config.get('irc', 'nickname')
-        )
-        self.app.connection.on_privmsg(self.text, self.on_privmsg)
-        self.app.connection.on_usr_action(self.text, self.on_usr_action)
+        # print("type(self.irc_message) is {}"
+        #       "".format(type(self.irc_message).__name__), file=sys.stderr)
+        # ^ WeakProxy, but actually MDTextField as demonstrated by
+        #   tracebacks to other errors such as trying to call
+        #   self.irc_message.on_focus() (deprecated call).
+        #   See doc/development/irc_message.md
+        self.irc_message.hint_text = '@' + self.app.get_scoped('nickname')
+        # ^ _hint_lbl is deprecated. See doc/irc_message.md field list.
+        self.app.connection.on_privmsg(self.title, self.on_privmsg)
+        self.app.connection.on_usr_action(self.title, self.on_usr_action)
 
     def update_irc_message_text(self, dt):
         self.irc_message.text = ''
-        self.irc_message.on_focus()
+        # self.irc_message.on_focus()  # See see doc/development/irc_message.md
+        self.irc_message.focus = True
 
     def send_message(self):
         Clock.schedule_once(self.update_irc_message_text)
-        self.app.connection.msg("#" + self.text, self.irc_message.text)
+        self.app.connection.msg("#" + self.title, self.irc_message.text)
         self.msg_list.add_widget(
             MultiLineListItem(
                 text = ("[b][color=1A237E]@"
-                        + self.app.config.get('irc', 'nickname')
+                        + self.app.get_scoped('nickname')
                         + "[/color][/b] "
                         + self.irc_message.text),
-                font_style='Subhead',
+                font_style=constants.FONT_STYLE_SUBHEADING,
             )
         )
-        nick = self.app.config.get('irc', 'nickname')
+        nick = self.app.get_scoped('nickname')
         Logger.info("IRC: <%s> %s" % (nick, self.irc_message.text))
 
     def on_privmsg(self, user, channel, msg):
@@ -72,7 +87,7 @@ class ChannelChatTab(MDTabsBase):
             MultiLineListItem(
                 text=("[b][color=F44336]@" + user + "[/color][/b] "
                         + msg),
-                font_style='Subhead',
+                font_style=constants.FONT_STYLE_SUBHEADING,
             )
         )
         Logger.info("IRC: <%s> %s" % (user, msg))
@@ -82,8 +97,8 @@ class ChannelChatTab(MDTabsBase):
             self.msg_list.add_widget(
                 MultiLineListItem(
                     text=("[color=9C27B0]" + user
-                          + "[/color] has joined #" + self.text),
-                    font_style='Subhead',
+                          + "[/color] has joined #" + self.title),
+                    font_style=constants.FONT_STYLE_SUBHEADING,
                 )
             )
             Logger.info("IRC: %s -> %s" % (user, 'joined'))
@@ -91,8 +106,8 @@ class ChannelChatTab(MDTabsBase):
             self.msg_list.add_widget(
                 MultiLineListItem(
                     text=("[color=9C27B0]" + user
-                          + "[/color] has left #" + self.text),
-                    font_style='Subhead',
+                          + "[/color] has left #" + self.title),
+                    font_style=constants.FONT_STYLE_SUBHEADING,
                 )
             )
             Logger.info("IRC: %s <- %s" % (user, 'left'))
@@ -102,11 +117,11 @@ class ChannelChatTab(MDTabsBase):
                     text=("[color=9A2FB0]" + user
                           + "[/color] has quit &bl;" + quit_message
                           + "&bt;"),
-                    font_style='Subhead',
+                    font_style=constants.FONT_STYLE_SUBHEADING,
                 )
             )
             Logger.info("IRC: %s <- %s" % (user, 'quit'))
-        self.app.connection.who(self.text).addCallback(
+        self.app.connection.who(self.title).addCallback(
             self.who_callback
         )
 
@@ -123,8 +138,8 @@ class ChannelChatTab(MDTabsBase):
 
     def who_callback(self, nick_data):
         self.nick_data = nick_data
-        nick_list = nick_data.keys()
-        nick_list.sort()
+        nick_list = list(nick_data.keys())
+        nick_list.sort()  # list has sort, keys does not.
         self.nick_list.clear_widgets()
         for nick in nick_list:
             list_item = MultiLineListItem(
@@ -133,10 +148,10 @@ class ChannelChatTab(MDTabsBase):
             list_item.bind(on_press=self.nick_details)
             self.nick_list.add_widget(list_item)
 
-        Logger.info("IRC: <%s> -> nicks -> %s" % (self.text, nick_list))
+        Logger.info("IRC: <%s> -> nicks -> %s" % (self.title, nick_list))
 
     def __post_connection__(self, connection):
         pass
 
     def __post_joined__(self, connection):
-        connection.who(self.text).addCallback(self.who_callback)
+        connection.who(self.title).addCallback(self.who_callback)

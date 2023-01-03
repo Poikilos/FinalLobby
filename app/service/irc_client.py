@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 
 import time
@@ -17,14 +18,17 @@ class IRCClientFactory(protocol.ClientFactory):
     MAX_ATTEMPTS = 5
     RECONNECT_DELAY = 60
 
-    def __init__(self, app, channel, nickname):
+    def __init__(self, app, channel, nickname, password, network):
         self.channel = channel
         self.nickname = nickname
+        self.password = password
         self.app = app
+        self.network = network
         self.connection_attempts = 0
 
     def buildProtocol(self, addr):
-        bot = IRCClient(self.nickname, self.app.config.get('irc', 'password'))
+        bot = IRCClient(self.nickname, self.password)
+        # self.app.config.get(self.network, 'password')
         bot.factory = self
         self.bot = bot
         self.connection_attempts = 0
