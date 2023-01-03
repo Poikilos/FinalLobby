@@ -6,6 +6,8 @@ import sys
 #   but it still throws configparser.NoOptionError--Is importing ok or
 #   not?
 import configparser
+from kivy.config import Config
+Config.set('input', 'mouse', 'mouse,disable_multitouch')
 from kivy.support import install_twisted_reactor
 from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.tab import MDTabsBase
