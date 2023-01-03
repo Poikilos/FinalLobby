@@ -16,6 +16,8 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.list import BaseListItem
 from kivymd.uix.tab import MDTabsBase
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import MDRaisedButton
+
 import app.constants as constants
 
 class MultiLineListItem(BaseListItem):
@@ -36,16 +38,40 @@ class MultiLineListItem(BaseListItem):
 
 class StatusTab(MDBoxLayout, MDTabsBase):
     app = ObjectProperty(None)
+    # connect_button = ObjectProperty(None)
+    # ^ causes "ValueError: None is not allowed for StatusTab.connect_button"
+    #   if it is set to None later.
     irc_action = ObjectProperty(None)
     irc_action_send_btn = ObjectProperty(None)
 
     def __init__(self, **kw):
         super(StatusTab, self).__init__(**kw)
         self.app = MDApp.get_running_app()
+        self.connect_button = None
         Clock.schedule_once(self.__post_init__)
 
     def __post_init__(self, args):
         pass
+
+    def add_connect_button(self):
+        if self.connect_button is not None:
+            raise RuntimeError("connect_button is already present.")
+        self.connect_button = MDRaisedButton(  # MultiLineListItem
+            text="Connect",
+            on_press=self.on_press_connect,
+            # size_hint_x = .3,  # has no effect if MultiLineListItem
+        )
+        self.msg_list.add_widget(self.connect_button)
+
+    def on_press_connect(self, button):
+        self.app.connect_or_ask()
+
+    def remove_connect_button(self):
+        if self.connect_button is None:
+            raise RuntimeError("connect_button is not present.")
+        self.msg_list.remove_widget(self.connect_button)
+        self.connect_button = None
+
 
     def update_irc_action_text(self, dt):
         self.irc_action.text = ''

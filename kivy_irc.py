@@ -72,6 +72,7 @@ class KivyIRCClient(MDApp):
         print("[set_custom_nav_state] state={}".format(state))
 
     def build(self):
+        self.connect_button = None
         self.defaultPort = 6667
         self.root = Builder.load_file('kivy_irc.kv')
         self.scr_mngr = self.root.ids.scr_mngr
@@ -99,6 +100,9 @@ class KivyIRCClient(MDApp):
         eventargs[0] -- Unused, but must be accepted as the number of
             seconds (Since this is a Clock event handler).
         '''
+        self.connect_or_ask()
+
+    def connect_or_ask(self):
         results = self.connect_irc()
         # Can raise:
         # "configparser.NoOptionError: No option 'nickname' in section: 'irc'"
@@ -109,9 +113,21 @@ class KivyIRCClient(MDApp):
             # if askForFields is not None:
             #     msg += " (You must specify: {})".format(askForFields)
             self.entry_dialog(msg, askForFields, self.connect_irc)
+            self.add_connect_button_if()
+        else:
+            self.remove_connect_button_if()
+
+    def add_connect_button_if(self):
+        if self.root.ids.chat_screen.ids.status_tab.connect_button is None:
+            self.root.ids.chat_screen.ids.status_tab.add_connect_button()
+
+    def remove_connect_button_if(self):
+        if self.root.ids.chat_screen.ids.status_tab.connect_button is not None:
+            self.root.ids.chat_screen.ids.status_tab.remove_connect_button()
 
     def on_answer_entry_dialog(self, button):
         if button.text.lower() != "ok":
+            self.add_connect_button_if()
             self.dialog.dismiss()
             self.dialog = None
             return
@@ -224,7 +240,7 @@ class KivyIRCClient(MDApp):
         #   allegedly taken over by force after a leadership dispute.
         config.setdefaults('irc.freenode.net', {
             'address': 'irc.freenode.net',
-            'port': 6667,
+            'port': self.defaultPort,
             'channels': ['#minetest', '#minetest-hub'],
         })
         '''
@@ -232,7 +248,7 @@ class KivyIRCClient(MDApp):
         '''
         config.setdefaults('irc.libera.chat', {
             'address': 'irc.libera.chat',
-            'port': 6667,  # TODO: 6697 TLS
+            'port': self.defaultPort,  # TODO: 6697 TLS
             'channels': ['#minetest', '#minetest-hub'],
             # minetest-hub is readonly except for contributors.
         })
@@ -304,7 +320,7 @@ class KivyIRCClient(MDApp):
             return results
             '''
         if port is None:
-            port = 6667
+            port = self.defaultPort
         print("Connecting to {}:{}".format(address, port))
         try:
             port = int(port)
@@ -326,8 +342,21 @@ class KivyIRCClient(MDApp):
             return results
             '''
 
-        reactor.connectTCP(address, port,
-                           IRCClientFactory(self, channels, nick, password, network))
+        self.connection = reactor.connectTCP(
+            address,
+            port,
+            IRCClientFactory(self, channels, nick, password, network),
+        )
+        # TODO: Add a button for self.connection.disconnect()
+        #   - and reactor.stop() (?) -- already done in
+        #     clientConnectionFailed handler in app/service/irc_client.py
+        #   - ?? See also "remote.broker.transport.loseConnection()"
+        #   at <https://stackoverflow.com/a/4816961/4541104>
+        # What does reactor.run() do?
+        if self.connection is not None:
+            print("dir(self.connection) is {}".format(dir(self.connection)))
+            self.remove_connect_button_if()
+
         return results
 
     def on_irc_connection(self, connection):

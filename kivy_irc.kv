@@ -156,6 +156,7 @@
         id: tab_panel
         tab_display_mode:'text'
         StatusTab:
+            id: status_tab
             name: 'status'
             title: 'Status'
             # icon: ''
@@ -198,7 +199,8 @@ MDBoxLayout:
         MDScreenManager:
             id: scr_mngr
             transition: sm.SlideTransition()
-            ChatScreen
+            ChatScreen:
+                id: chat_screen
             SettingScreen
 
         MDNavigationDrawer:
